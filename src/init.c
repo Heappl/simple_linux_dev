@@ -14,18 +14,20 @@ MODULE_LICENSE("GPL");
 #define DEVICE_NAME "median"
 #define CLASS_NAME "medianclass"
 
-static struct median_dev* dev = NULL;
+static median_dev dev = NULL;
 static ssize_t device_read(struct file *filp, char *buffer, size_t length, loff_t* offset)
 {
-    static char local_buffer[1000];
-    int size = median_dev_get(dev, local_buffer, sizeof(local_buffer));
-    copy_to_user(buffer, local_buffer, size);
-    return size;
+    string_view ret = median_dev_get(dev);
+    copy_to_user(buffer, ret.ptr, ret.len);
+    return ret.len;
 }
 
 static ssize_t device_write(struct file *filp, const char *buff, size_t len, loff_t * off)
 {
-    return median_dev_append(dev, buff + *off, len);
+    char* kbuf = median_dev_prepare_buff(dev, len);
+    copy_from_user(kbuf, buff, len);
+    median_dev_append(dev, kbuf, len);
+    return len;
 }
 
 static int device_opened = 0;

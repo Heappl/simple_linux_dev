@@ -7,8 +7,11 @@ extern "C" {
 
 void* user_alloc(unsigned size);
 void user_dealloc(void* bfr);
+void* kernel_alloc(unsigned size);
+void kernel_dealloc(void* bfr);
 void kernel_error(const char* info);
 void kernel_info(const char* info);
+void copy(char* dst, const char* src, unsigned bytes);
 
 #ifdef __cplusplus
 }

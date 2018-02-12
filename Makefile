@@ -1,14 +1,17 @@
-SOURCEDIR = src
-BUILD_DIR ?= $(PWD)/build
+KERNELDIR ?= /lib/modules/$(shell uname -r)/build/
+SOURCEDIR ?= /home/heappl/median_dev/src
+BUILD_DIR ?= /home/heappl/median_dev/build
 BUILD_DIR_MAKEFILE ?= $(BUILD_DIR)/Makefile
 FLAGS=-I/lib/modules/$(shell uname -r)/build/include
-
+FLAGS=-std=C11
+ 
 modname=median
-obj-m += ${modname}.o
-${modname}-objs := src/init.c src/median_dev.c src/linux_wrapper.c
+obj-m := ${modname}.o
+${modname}-objs := init.o median_dev.o linux_wrapper.o
+
 
 all: $(BUILD_DIR_MAKEFILE) $(OBJECTS)
-	make -C /lib/modules/$(shell uname -r)/build/ M=$(BUILD_DIR) src=$(PWD)/src modules
+	$(MAKE) -C $(KERNELDIR)  M=$(BUILD_DIR) src=$(SOURCEDIR) modules
 
 $(BUILD_DIR):
 	@mkdir -p "$@"
@@ -18,7 +21,7 @@ $(BUILD_DIR_MAKEFILE): $(BUILD_DIR)
 
 clean: unload
 	rm $(BUILD_DIR_MAKEFILE)
-	make -C /lib/modules/$(shell uname -r)/build/ M=$(BUILD_DIR) src=$(PWD)/src clean
+	$(MAKE) -C $(KERNELDIR) M=$(BUILD_DIR) src=$(SOURCEDIR) clean
 
 load: all
 	@sudo rmmod median.ko || echo ""
@@ -29,10 +32,10 @@ unload:
 	@sudo rmmod median.ko || echo ""
     
 prepare_test: 
-	mkdir -p test_build
-	cd test_build && cmake ..
+	mkdir -p build/test
+	cd build/test && cmake ../..
 
 test:  prepare_test
-	$(MAKE) -C test_build
-	ctest -C test_build
+	$(MAKE) -C build/test
+	build/test/median_dev_test
 

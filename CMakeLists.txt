@@ -1,5 +1,5 @@
 cmake_minimum_required (VERSION 2.8)
-project (media_dev_test)
+project (median_dev_test)
 
 set(dir ${PROJECT_SOURCE_DIR}/build/test)
 set(EXECUTABLE_OUTPUT_PATH ${dir} CACHE PATH "Build directory" FORCE)
@@ -14,8 +14,9 @@ add_subdirectory (googletest-release-1.8.0)
 
 add_executable(
     ${PROJECT_NAME}
-    src/median_dev.c
+    src/array.c
     test/linux_wrapper.cpp
+    test/array_test.cpp
     test/bigint.cpp
 )
 target_link_libraries(${PROJECT_NAME} gtest gtest_main)
