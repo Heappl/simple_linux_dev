@@ -64,8 +64,7 @@ TEST_F(BigintTest, creatingFromIntAndComparing)
     bigint k = bigint_create(-1, alloc);
     bigint l = bigint_create(0, alloc);
     bigint m = bigint_create(-9, alloc);
-    //compare_multiple({m, k, l, v, x, y, z});
-    compare_multiple({l, v, x, y, z});
+    compare_multiple({m, k, l, v, x, y, z});
 }
 
 TEST_F(BigintTest, toStringForSmall)
