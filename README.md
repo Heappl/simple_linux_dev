@@ -7,3 +7,5 @@ It is just a simple try out how to create a device kernel module.
 * To compile and load kernel: **make load**  (will require sudo password to load the module)
 * To unload kernel: **make unload** (will require sudo as well)
 
+It isn't polished as much as I wished, some parts could use some more touch.
+
