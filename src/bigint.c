@@ -44,12 +44,17 @@ void bigint_destroy(bigint x)
 
 int bigint_less(bigint first, bigint second)
 {
+    int s = 0;
+    int i;
+    if (first->negative && !second->negative)
+        return 1;
+    if (!first->negative && second->negative)
+        return 0;
     if (array_size(first->array) < array_size(second->array))
         return 1;
     if (array_size(first->array) > array_size(second->array))
         return 0;
-    int s = array_size(first->array);
-    int i;
+    s = array_size(first->array);
     for (i = s - 1; i >= 0; --i)
     {
         uint32t first_curr = *(uint32t*)array_get(first->array, i);
@@ -62,12 +67,13 @@ int bigint_less(bigint first, bigint second)
 
 int bigint_greater(bigint first, bigint second)
 {
+    int s = 0;
+    int i;
     if (array_size(first->array) > array_size(second->array))
         return 1;
     if (array_size(first->array) < array_size(second->array))
         return 0;
-    int s = array_size(first->array);
-    int i;
+    s = array_size(first->array);
     for (i = s - 1; i >= 0; --i)
     {
         uint32t first_curr = *(uint32t*)array_get(first->array, i);
@@ -78,15 +84,15 @@ int bigint_greater(bigint first, bigint second)
     return 0;
 }
 
-void bigint_mult(bigint arg, int x)
+void bigint_mult_i(bigint arg, int x)
 {
+    int i;
+    uint64t carry = 0;
     if (x < 0)
     {
         arg->negative = !arg->negative;
         x = -x;
     }
-    int i;
-    uint64t carry = 0;
     for (i = 0; i < array_size(arg->array); ++i)
     {
         uint32t* curr = (uint32t*)array_get(arg->array, i);
@@ -106,7 +112,8 @@ void bigint_mult(bigint arg, int x)
 
 int bigint_iszero(bigint arg)
 {
-    for (int i = 0; i < array_size(arg->array); ++i)
+    int i;
+    for (i = 0; i < array_size(arg->array); ++i)
         if (*(uint32t*)array_get(arg->array, i) != 0)
             return 0;
     return 1;
@@ -126,11 +133,12 @@ void bigint_impl_reverse(char* begin, char* end)
     }
 }
 
-uint32t bigint_impl_div(bigint x, uint32t by)
+unsigned bigint_div_u(bigint x, unsigned by)
 {
     int s = array_size(x->array);
+    int i;
     uint32t reminder = 0;
-    for (int i = s - 1; i >= 0; --i)
+    for (i = s - 1; i >= 0; --i)
     {
         uint32t* curr = (uint32t*)array_get(x->array, i);
         uint64t aux = reminder;
@@ -152,7 +160,7 @@ void bigint_positive_tostr(bigint x, char* buffer, int size)
     bigint xcopy = bigint_copy(x);
     while ((i + 1 < size) && !bigint_iszero(xcopy))
     {
-        uint32t r = bigint_impl_div(xcopy, 10);
+        uint32t r = bigint_div_u(xcopy, 10);
         buffer[i++] = (char)r + '0';
     }
     bigint_impl_reverse(buffer, buffer + i);
@@ -180,11 +188,14 @@ void bigint_tostr(bigint x, char* buffer, int size)
         bigint_positive_tostr(x, buffer + i, size - i);
 }
 
-void bigint_add(bigint arg, unsigned x)
+
+void bigint_impl_add_u(bigint arg, unsigned x, int start)
 {
-    int i;
+    int i = 0;
+    while (start >= array_size(arg->array))
+        array_push(arg->array, &i);
     uint64t carry = x;
-    for (i = 0; i < array_size(arg->array); ++i)
+    for (i = start; i < array_size(arg->array); ++i)
     {
         uint32t* curr = (uint32t*)array_get(arg->array, i);
         uint64t aux = *curr;
@@ -200,14 +211,61 @@ void bigint_add(bigint arg, unsigned x)
         array_push(arg->array, &aux);
     }
 }
+void bigint_impl_sub_u(bigint arg, unsigned x, int start)
+{
+    int i = 0;
+    if (start >= array_size(arg->array) && x != 0)
+    {
+    }
+    uint64t carry = x;
+    for (i = start; i < array_size(arg->array); ++i)
+    {
+        uint32t* curr = (uint32t*)array_get(arg->array, i);
+        uint64t aux = *curr;
+        if (aux >= carry)
+        {
+            aux -= carry;
+            *curr = aux;
+            break;
+        }
+        else
+        {
+            carry -= aux;
+            *curr = carry;
+            carry = 1;
+        }
+    }
+    if (carry > 0)
+    {
+        /*arg->negative = !arg->negative;*/
+        uint32t aux = carry;
+        array_push(arg->array, &aux);
+    }
+}
+void bigint_add_u(bigint arg, unsigned x)
+{
+    bigint_impl_add_u(arg, x, 0);
+}
+
+void bigint_add(bigint arg, bigint other)
+{
+    for (int i = 0; i < array_size(other->array); ++i)
+        if (other->negative == arg->negative)
+            bigint_impl_add_u(arg, *(unsigned*)array_get(other->array, i), i);
+        else
+            bigint_impl_sub_u(arg, *(unsigned*)array_get(other->array, i), i);
+}
 
 bigint bigint_fromstr(const char* buffer, int size, allocator_info alloc)
 {
     bigint ret = bigint_create(0, alloc);
-    for (int i = 0; i < size; ++i)
+    int i = 0;
+    if (buffer[i] == '-')
+        ret->negative = 1;
+    for (; i < size; ++i)
     {
-        bigint_mult(ret, 10);
-        bigint_add(ret, (int)(buffer[i] - '0'));
+        bigint_mult_i(ret, 10);
+        bigint_add_u(ret, (int)(buffer[i] - '0'));
     }
     return ret;
 }

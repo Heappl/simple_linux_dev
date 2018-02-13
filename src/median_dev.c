@@ -79,18 +79,22 @@ void median_dev_release(median_dev dev)
 
 string_view median_dev_get(median_dev dev)
 {
+    long* lower = 0;
+    long* upper = 0;
+    long median = 0;
+    char* out = 0;
     string_view ret = {};
     if (dev->just_read)
     {
         dev->just_read = 0;
         return ret;
     }
-    long* lower = median_container_get_lower(dev->mc);
-    long* upper = median_container_get_upper(dev->mc);
+    lower = median_container_get_lower(dev->mc);
+    upper = median_container_get_upper(dev->mc);
     if (!lower)
         return ret;
-    long median = (*lower + *upper) / 2;
-    char* out = dev->output_buffer;
+    median = (*lower + *upper) / 2;
+    out = dev->output_buffer;
     if ((*upper - *lower) % 2 == 0)
         sprintf(out, "%li\n", median);
     else
@@ -118,9 +122,9 @@ void median_dev_append(median_dev dev, char* buff, unsigned size)
     *end = '\0';
     while (buff != end)
     {
+        long x;
         string_view next_word = pop_next_word(&buff, end);
         printk(KERN_INFO "next word %s\n", next_word.ptr);
-        long x;
         kstrtol(next_word.ptr, 10, &x);
         printk(KERN_INFO "inserted %li %s\n", x, buff);
         median_container_insert(dev->mc, &x);

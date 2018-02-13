@@ -14,9 +14,10 @@ bigint bigint_create(int x, allocator_info alloc);
 void bigint_destroy(bigint x);
 int bigint_less(bigint first, bigint second);
 int bigint_greater(bigint first, bigint second);
-int bigint_equal(bigint first, bigint second);
-void bigint_mult(bigint arg, int x);
-void bigint_add(bigint arg, unsigned x);
+unsigned bigint_div_u(bigint arg, unsigned x);
+void bigint_mult_i(bigint arg, int x);
+void bigint_add_u(bigint arg, unsigned x);
+void bigint_add(bigint arg, bigint other);
 
 void bigint_tostr(bigint x, char* buffer, int size);
 bigint bigint_fromstr(const char* buffer, int size, allocator_info alloc);
