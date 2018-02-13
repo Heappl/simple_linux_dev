@@ -14,7 +14,7 @@ $(BUILD_DIR):
 $(BUILD_DIR_MAKEFILE): $(BUILD_DIR)
 	@touch "$@"
 
-clean: unload
+clean: 
 	rm $(BUILD_DIR_MAKEFILE)
 	$(MAKE) -C $(KERNELDIR) M=$(BUILD_DIR) src=$(SOURCEDIR) clean
 
