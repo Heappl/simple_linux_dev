@@ -14,7 +14,7 @@ void heap_push(array_t array, heap_cmp less)
     }
 }
 
-int heap_aux_choose_bigger_child(array_t array, int upto, int index, heap_cmp less)
+static int heap_aux_choose_bigger_child(array_t array, int upto, int index, heap_cmp less)
 {
     int first_child_index = (index + 1) * 2 - 1;
     int second_child_index = (index + 1) * 2;

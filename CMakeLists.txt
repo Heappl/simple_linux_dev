@@ -15,11 +15,14 @@ add_subdirectory (googletest-release-1.8.0)
 
 add_executable(
     ${PROJECT_NAME}
+    src/allocator.c
     src/array.c
     src/heap.c
+    src/median_container.c
     test/linux_wrapper.cpp
     test/array_test.cpp
     test/heap_test.cpp
     test/bigint.cpp
+    test/median_container_test.cpp
 )
 target_link_libraries(${PROJECT_NAME} gtest gtest_main)

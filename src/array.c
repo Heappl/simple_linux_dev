@@ -12,19 +12,19 @@ struct array_impl
 
 array_t array_create(unsigned object_size, allocator_info alloc)
 {
-    array_t ret = alloc.allocate(alloc.ctx, sizeof(struct array_impl));
+    array_t ret = allocate(alloc, sizeof(struct array_impl));
     ret->obj_size = object_size;
     ret->size = 0;
     ret->alloc = alloc;
     ret->available = 1;
-    ret->object = alloc.allocate(alloc.ctx, object_size);
+    ret->object = allocate(alloc, object_size);
     return ret;
 }
 
 void array_destroy(array_t ctx)
 {
-    ctx->alloc.deallocate(ctx->alloc.ctx, ctx->object);
-    ctx->alloc.deallocate(ctx->alloc.ctx, ctx);
+    deallocate(ctx->alloc, ctx->object);
+    deallocate(ctx->alloc, ctx);
 }
 
 void array_push(array_t ctx, void* object)

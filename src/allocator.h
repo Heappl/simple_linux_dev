@@ -10,5 +10,8 @@ typedef struct
     deallocate_func deallocate;
 } allocator_info;
 
+void* allocate(allocator_info ctx, unsigned size);
+void deallocate(allocator_info ctx, void* ptr);
+
 #endif //ALLOCATOR_H
 
