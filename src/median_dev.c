@@ -62,7 +62,7 @@ int bigint_greater_wrapper(void* first, void* second)
 
 median_dev median_dev_init(void)
 {
-    median_dev ret = kernel_alloc(sizeof(median_dev));
+    median_dev ret = kernel_alloc(sizeof(struct median_dev_impl));
     ret->mc = median_container_create(
         sizeof(bigint), bigint_less_wrapper, bigint_greater_wrapper, make_kernel_alloc());
     ret->input_size = 10 * 1024;

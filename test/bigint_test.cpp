@@ -41,12 +41,22 @@ struct BigintTest : ::testing::Test
                 compare(ordered[i], ordered[j]);
         }
     }
+    void destroy_all(std::vector<bigint> ordered)
+    {
+        for (auto elem : ordered)
+            bigint_destroy(elem);
+    }
 
     void checkToString(bigint x, std::string expected)
     {
         std::vector<char> buffer(1000, 'A');
         bigint_tostr(x, &buffer.front(), buffer.size());
         ASSERT_EQ(expected, std::string(&buffer.front()));
+    }
+    void checkToStringAndDestroy(bigint x, std::string expected)
+    {
+        checkToString(x, expected);
+        bigint_destroy(x);
     }
 
     template <typename T>
@@ -84,18 +94,18 @@ TEST_F(BigintTest, creatingFromIntAndComparing)
     bigint k = bigint_create(-1, alloc);
     bigint l = bigint_create(0, alloc);
     bigint m = bigint_create(-9, alloc);
-    //compare_multiple({m, k});//, l, v, x, y, z});
-    compare_multiple({x, y});//, l, v, x, y, z});
+    compare_multiple({m, k, l, v, x, y, z});
+    destroy_all({m, k, l, v, x, y, z});
 }
 
 TEST_F(BigintTest, toStringForSmall)
 {
-    checkToString(bigint_create(10, alloc), "10");
-    checkToString(bigint_create(121312, alloc), "121312");
-    checkToString(bigint_create(0, alloc), "0");
-    checkToString(bigint_create(-1231, alloc), "-1231");
-    checkToString(bigint_create(999, alloc), "999");
-    checkToString(bigint_create(-110000, alloc), "-110000");
+    checkToStringAndDestroy(bigint_create(10, alloc), "10");
+    checkToStringAndDestroy(bigint_create(121312, alloc), "121312");
+    checkToStringAndDestroy(bigint_create(0, alloc), "0");
+    checkToStringAndDestroy(bigint_create(-1231, alloc), "-1231");
+    checkToStringAndDestroy(bigint_create(999, alloc), "999");
+    checkToStringAndDestroy(bigint_create(-110000, alloc), "-110000");
 }
 
 TEST_F(BigintTest, toString64BitNumber)
@@ -105,7 +115,7 @@ TEST_F(BigintTest, toString64BitNumber)
     int multi = 41239;
     xi *= multi;
     bigint_mult_i(xb, multi);
-    checkToString(xb, std::to_string(xi));
+    checkToStringAndDestroy(xb, std::to_string(xi));
 }
 
 TEST_F(BigintTest, toStringGoogol)
@@ -117,7 +127,7 @@ TEST_F(BigintTest, toStringGoogol)
         bigint_mult_i(x, 10);
         expected += "0";
     }
-    checkToString(x, expected);
+    checkToStringAndDestroy(x, expected);
 }
 
 TEST_F(BigintTest, toStringConsecutiveMult)
@@ -126,7 +136,7 @@ TEST_F(BigintTest, toStringConsecutiveMult)
     for (int i = 101; i < 121; ++i)
         bigint_mult_i(x, i);
     std::string expected = "788465831362662701050293791632835543040000";
-    checkToString(x, expected);
+    checkToStringAndDestroy(x, expected);
 }
 
 TEST_F(BigintTest, multiplicationWithComparison)
@@ -144,7 +154,8 @@ TEST_F(BigintTest, multiplicationWithComparison)
         if (i == 114)
             ASSERT_NO_FATAL_FAILURE(compare(x, y)) << i;
     }
-      
+    bigint_destroy(x);
+    bigint_destroy(y);
 }
 
 TEST_F(BigintTest, additionForSmallNumbers)
@@ -159,6 +170,7 @@ TEST_F(BigintTest, additionForSmallNumbers)
             expected += j;
             checkToString(x, std::to_string(expected));
         }
+        bigint_destroy(x);
     }
 }
 
@@ -196,7 +208,7 @@ TEST_F(BigintTest, additionForBigNumberAndSmall)
     std::string first = "123124912859839284";
     bigint x = bigint_fromstr(first.c_str(), first.size(), alloc);
     bigint_add_u(x, 12322);
-    checkToString(x, "123124912859851606");
+    checkToStringAndDestroy(x, "123124912859851606");
 }
 
 TEST_F(BigintTest, add1ToALotsOf9s)
@@ -204,7 +216,7 @@ TEST_F(BigintTest, add1ToALotsOf9s)
     std::string first = "99999999999999999999999999999999";
     bigint x = bigint_fromstr(first.c_str(), first.size(), alloc);
     bigint_add_u(x, 1);
-    checkToString(x, "100000000000000000000000000000000");
+    checkToStringAndDestroy(x, "100000000000000000000000000000000");
 }
 
 TEST_F(BigintTest, multiplyBigAndDivWithIndependent)
@@ -216,6 +228,7 @@ TEST_F(BigintTest, multiplyBigAndDivWithIndependent)
     bigint_add_u(x, 1);
     ASSERT_EQ(1, bigint_div_u(x, 2));
     checkToString(x, first);
+    bigint_destroy(x);
 }
 
 TEST_F(BigintTest, divSmallWithoutReminder)
@@ -320,6 +333,8 @@ TEST_F(BigintTest, addPowerTwos)
     ASSERT_NO_FATAL_FAILURE(checkToString(x, "2476182310025664207091924992"));
     bigint_add(y, x);
     ASSERT_NO_FATAL_FAILURE(checkToString(y, "2476484541480567864385601536"));
+    bigint_destroy(x);
+    bigint_destroy(y);
 }
 
 TEST_F(BigintTest, subPowerTwos)
@@ -336,6 +351,8 @@ TEST_F(BigintTest, subPowerTwos)
     bigint_negate(x);
     bigint_add(y, x);
     ASSERT_NO_FATAL_FAILURE(checkToString(y, "-" + first));
+    bigint_destroy(x);
+    bigint_destroy(y);
 }
 
 TEST_F(BigintTest, addIndepentedBigInts)
@@ -346,6 +363,8 @@ TEST_F(BigintTest, addIndepentedBigInts)
     bigint y = bigint_fromstr(second.c_str(), second.size(), alloc);
     bigint_add(x, y);
     checkToString(x, "9999999999999999999999999999999999999999");
+    bigint_destroy(x);
+    bigint_destroy(y);
 }
 
 TEST_F(BigintTest, subIndepentedBigInts)
@@ -357,6 +376,8 @@ TEST_F(BigintTest, subIndepentedBigInts)
     bigint_negate(x);
     bigint_add(y, x);
     checkToString(y, "111111111111111110000000000000000000000");
+    bigint_destroy(x);
+    bigint_destroy(y);
 }
 
 TEST_F(BigintTest, addTwoBigInts)

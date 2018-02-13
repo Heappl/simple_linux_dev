@@ -176,6 +176,7 @@ int bigint_positive_tostr(bigint x, char* buffer, int size)
         uint32t r = bigint_div_u(xcopy, 10);
         buffer[i++] = (char)r + '0';
     }
+    bigint_destroy(xcopy);
     bigint_impl_reverse(buffer, buffer + i);
     buffer[i] = '\0';
     return i;
