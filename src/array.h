@@ -15,6 +15,7 @@ void array_pop(array_t ctx);
 void* array_get(array_t ctx, unsigned index);
 void array_set(array_t ctx, unsigned index, void* object);
 int array_size(array_t ctx);
+void array_swap_elems(array_t ctx, unsigned first, unsigned second);
 #ifdef __cplusplus
 }
 #endif

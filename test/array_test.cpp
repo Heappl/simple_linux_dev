@@ -39,12 +39,15 @@ struct ArrayTest : ::testing::Test
             }
             ASSERT_EQ(expected.size(), array_size(array));
             for (int j = 0; j < expected.size(); ++j)
-            {
-                int* elem = (int*)array_get(array, j);
-                ASSERT_NE(nullptr, elem);
-                ASSERT_EQ(expected[j], *elem) << j << "th element";
-            }
+                check_elem(j, expected[j]);
         }
+    }
+
+    void check_elem(int index, int expected)
+    {
+        int* got = (int*)array_get(array, index);
+        ASSERT_NE(nullptr, got);
+        ASSERT_EQ(expected, *got) << index << "th index";
     }
 };
 
@@ -82,12 +85,7 @@ TEST_F(ArrayTest, manyPushes_checkingAllElementsAfter) {
         array_push(array, &x);
     }
     for (int i = 0; i < 100; ++i)
-    {
-        int x = (i * 97) % 100;
-        int* ptr = (int*)array_get(array, i);
-        ASSERT_NE(nullptr, ptr);
-        ASSERT_EQ(x, *ptr) << i << "th element";
-    }
+        check_elem(i, (i * 97) % 100);
 }
 
 TEST_F(ArrayTest, moreRandomPushesAndPops_checkingElementsWithVector)
@@ -127,14 +125,28 @@ TEST_F(ArrayTest, randomSets)
         array_set(array, index, &elem);
         
         if (j % 10 == 0) {
-            for (int k = 0; k < 100; ++k) {
-                int* got = (int*)array_get(array, k);
-                ASSERT_NE(nullptr, got);
-                ASSERT_EQ(expected[k], *got) << j << "th index";
-            }
+            for (int k = 0; k < 100; ++k)
+                check_elem(k, expected[k]);
         }
     }
 }
 
+TEST_F(ArrayTest, swapElements)
+{
+    for (int i = 0; i < 100; ++i)
+        array_push(array, &i);
+    array_swap_elems(array, 5, 18);
+    ASSERT_NO_FATAL_FAILURE(check_elem(5, 18));
+    ASSERT_NO_FATAL_FAILURE(check_elem(18, 5));
+}
+TEST_F(ArrayTest, swapInvalidElements)
+{
+    for (int i = 0; i < 10; ++i)
+        array_push(array, &i);
+    array_swap_elems(array, 11, 8);
+    array_swap_elems(array, 1, 15);
+    ASSERT_NO_FATAL_FAILURE(check_elem(1, 1));
+    ASSERT_NO_FATAL_FAILURE(check_elem(8, 8));
+}
 } //namespace
 

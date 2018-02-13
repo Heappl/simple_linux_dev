@@ -70,3 +70,17 @@ int array_size(array_t ctx)
     return ctx->size;
 }
 
+void array_swap_elems(array_t ctx, unsigned first, unsigned second)
+{
+    if ((first >= ctx->size) || (second >= ctx->size))
+        return;
+    char* first_elem = ctx->object + first * ctx->obj_size;
+    char* second_elem = ctx->object + second * ctx->obj_size;
+    for (int i = 0; i < ctx->obj_size; ++i)
+    {
+        *(first_elem + i) ^= *(second_elem + i);
+        *(second_elem + i) ^= *(first_elem + i);
+        *(first_elem + i) ^= *(second_elem + i);
+    }
+}
+
