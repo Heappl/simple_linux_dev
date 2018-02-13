@@ -48,16 +48,17 @@ int bigint_impl_equal(bigint first, bigint second)
     int s2 = array_size(second->array);
     int s = (s1 < s2) ? s2 : s1;
     int bothzero = 1;
+    int i = 0;
 
-    for (int i = s - 1; i >= 0; --i)
+    for (i = s - 1; i >= 0; --i)
     {
         uint32t first_curr = 0;
+        uint32t second_curr = 0;
         if (i < s1)
             first_curr = *(uint32t*)array_get(first->array, i);
-        uint32t second_curr = 0;
         if (i < s2)
             second_curr = *(uint32t*)array_get(second->array, i);
-        bothzero &= first_curr || second_curr;
+        bothzero &= !first_curr || !second_curr;
         if (first_curr != second_curr) return 0;
     }
     return bothzero || (first->negative == second->negative);
@@ -72,14 +73,14 @@ int bigint_less(bigint first, bigint second)
     if (bigint_impl_equal(first, second))
         return 0;
     if (first->negative != second->negative)
-        return !first->negative;
+        return first->negative;
 
     for (i = s - 1; i >= 0; --i)
     {
         uint32t first_curr = 0;
+        uint32t second_curr = 0;
         if (i < s1)
             first_curr = *(uint32t*)array_get(first->array, i);
-        uint32t second_curr = 0;
         if (i < s2)
             second_curr = *(uint32t*)array_get(second->array, i);
         if (first_curr == second_curr) continue;
@@ -199,16 +200,16 @@ int bigint_tostr(bigint x, char* buffer, int size)
         return i;
     }
     else
-        return bigint_positive_tostr(x, buffer + i, size - i);
+        return i + bigint_positive_tostr(x, buffer + i, size - i);
 }
 
 
 void bigint_impl_add_u(bigint arg, unsigned x, int start)
 {
     int i = 0;
+    uint64t carry = x;
     while (start >= array_size(arg->array))
         array_push(arg->array, &i);
-    uint64t carry = x;
     for (i = start; i < array_size(arg->array); ++i)
     {
         uint32t* curr = (uint32t*)array_get(arg->array, i);
@@ -228,9 +229,6 @@ void bigint_impl_add_u(bigint arg, unsigned x, int start)
 void bigint_impl_sub_u(bigint arg, unsigned x, int start)
 {
     int i = 0;
-    if (start >= array_size(arg->array) && x != 0)
-    {
-    }
     uint64t carry = x;
     for (i = start; i < array_size(arg->array); ++i)
     {
@@ -251,9 +249,14 @@ void bigint_impl_sub_u(bigint arg, unsigned x, int start)
     }
     if (carry > 0)
     {
-        /*arg->negative = !arg->negative;*/
-        uint32t aux = carry;
-        array_push(arg->array, &aux);
+        arg->negative = !arg->negative;
+        for (i = 0; i < array_size(arg->array); ++i)
+        {
+            uint32t* curr = (uint32t*)array_get(arg->array, i);
+            *curr = -*curr;
+        }
+        --carry;
+        array_push(arg->array, &carry);
     }
 }
 void bigint_add_u(bigint arg, unsigned x)
@@ -263,7 +266,8 @@ void bigint_add_u(bigint arg, unsigned x)
 
 void bigint_add(bigint arg, bigint other)
 {
-    for (int i = 0; i < array_size(other->array); ++i)
+    int i = 0;
+    for (i = 0; i < array_size(other->array); ++i)
         if (other->negative == arg->negative)
             bigint_impl_add_u(arg, *(unsigned*)array_get(other->array, i), i);
         else
@@ -274,13 +278,18 @@ bigint bigint_fromstr(const char* buffer, int size, allocator_info alloc)
 {
     bigint ret = bigint_create(0, alloc);
     int i = 0;
-    if (buffer[i] == '-')
+    if ((i < size) && (buffer[i] == '-'))
+    {
         ret->negative = 1;
+        ++i;
+    }
     for (; i < size; ++i)
     {
         bigint_mult_i(ret, 10);
         bigint_add_u(ret, (int)(buffer[i] - '0'));
     }
+    if (bigint_iszero(ret))
+        ret->negative = 0;
     return ret;
 }
 

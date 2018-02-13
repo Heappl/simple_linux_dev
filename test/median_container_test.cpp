@@ -198,5 +198,31 @@ TEST_F(MedianContainerTest, multipleGroupsOfSameElementsGettingSmaller)
     }
 }
 
+TEST_F(MedianContainerTest, negativeGettingSmaller)
+{
+    for (int i = 0; i < 100; ++i)
+    {
+        insert(-i);
+        check_median(-i / 2 - i % 2, -i / 2);
+    }
+}
+
+TEST_F(MedianContainerTest, negativesMixedWithPositives)
+{
+    int seed = 997;
+    int N = 1223;
+    std::vector<int> sofar;
+    for (int i = 0; i < N; ++i)
+    {
+        int elem = ((i + 1) * seed) % N - N / 2;
+        insert(elem);
+        sofar.push_back(elem);
+        std::sort(sofar.begin(), sofar.end());
+        int lower = i / 2;
+        int upper = i / 2 + i % 2;
+        check_median(sofar[lower], sofar[upper]);
+    }
+}
+
 } //namespace
 

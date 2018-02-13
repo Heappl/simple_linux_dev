@@ -85,6 +85,7 @@ string_view median_dev_get(median_dev dev)
     bigint lower, upper;
     int rem = 0;
     string_view ret = {dev->output_buffer, 0};
+    bigint median = 0;
     if (dev->just_read)
     {
         dev->just_read = 0;
@@ -95,7 +96,7 @@ string_view median_dev_get(median_dev dev)
     if (!lower)
         return ret;
 
-    bigint median = bigint_copy(lower);
+    median = bigint_copy(lower);
     bigint_add(median, upper);
     rem = bigint_div_u(median, 2);
     

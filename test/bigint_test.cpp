@@ -17,8 +17,8 @@ struct BigintTest : ::testing::Test
     void compare(bigint x, bigint y)
     {
         ASSERT_TRUE(bigint_less(x, y)) << bi2str(x) << " " << bi2str(y);
-        ASSERT_FALSE(bigint_less(y, x)) << bi2str(x) << " " << bi2str(y);
-        ASSERT_TRUE(bigint_greater(y, x)) << bi2str(x) << " " << bi2str(y);
+        ASSERT_FALSE(bigint_less(y, x)) << bi2str(y) << " " << bi2str(x);
+        ASSERT_TRUE(bigint_greater(y, x)) << bi2str(y) << " " << bi2str(x);
         ASSERT_FALSE(bigint_greater(x, y)) << bi2str(x) << " " << bi2str(y);
     }
 
@@ -44,9 +44,9 @@ struct BigintTest : ::testing::Test
 
     void checkToString(bigint x, std::string expected)
     {
-        std::vector<char> buffer(expected.size() + 1, 'A');
+        std::vector<char> buffer(1000, 'A');
         bigint_tostr(x, &buffer.front(), buffer.size());
-        ASSERT_STREQ(expected.c_str(), &buffer.front());
+        ASSERT_EQ(expected, std::string(&buffer.front()));
     }
 
     template <typename T>
@@ -61,6 +61,17 @@ struct BigintTest : ::testing::Test
         bigint_tostr(xb, buffer, sizeof(buffer));
         ASSERT_STREQ(from.c_str(), buffer);
         bigint_destroy(xb);
+    }
+    
+    void compareBigintFromStrings(std::string smaller, std::string bigger)
+    {
+        bigint x = bigint_fromstr(smaller.c_str(), smaller.size(), alloc);
+        bigint y = bigint_fromstr(bigger.c_str(), bigger.size(), alloc);
+
+        compare(x, y);
+
+        bigint_destroy(x);
+        bigint_destroy(y);
     }
 };
 
@@ -157,7 +168,7 @@ TEST_F(BigintTest, fromString64BitValues)
     {
         ASSERT_NO_FATAL_FAILURE(checkFromString(1231122321llu * i));
         ASSERT_NO_FATAL_FAILURE(checkFromString(889llu * i + (1llu << 33) - 3));
-        ASSERT_NO_FATAL_FAILURE(checkFromString((1llu << 56) - i));
+        ASSERT_NO_FATAL_FAILURE(checkFromString(-(1llu << 56) - i));
     }
 }
 
@@ -166,9 +177,18 @@ TEST_F(BigintTest, fromStringSmallValues)
     for (int i = 1; i < 100; ++i)
     {
         ASSERT_NO_FATAL_FAILURE(checkFromString(123112 + i));
-        ASSERT_NO_FATAL_FAILURE(checkFromString(889 * i));
+        ASSERT_NO_FATAL_FAILURE(checkFromString(-889 * i));
         ASSERT_NO_FATAL_FAILURE(checkFromString(i));
     }
+}
+
+TEST_F(BigintTest, fromStringComparison)
+{
+    compareBigintFromStrings("-123124912859839284", "0");
+    compareBigintFromStrings("-123124912859839284", "-0");
+    compareBigintFromStrings("0", "123124912859839284");
+    compareBigintFromStrings("-0", "123124912859839284");
+    compareBigintFromStrings("-123124912859839284", "123124912859839284");
 }
 
 TEST_F(BigintTest, additionForBigNumberAndSmall)

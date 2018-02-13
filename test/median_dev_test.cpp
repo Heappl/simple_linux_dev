@@ -48,5 +48,11 @@ TEST_F(MedianDevTest, simpleMedianSplit)
     check_median("2");
 }
 
+TEST_F(MedianDevTest, someSimpleNegatives)
+{
+    append_stream("-1 -2 -3");
+    check_median("-2");
+}
+
 } //namespace
 
