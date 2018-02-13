@@ -8,6 +8,7 @@ extern "C" {
 struct array_impl;
 typedef struct array_impl* array_t;
 
+array_t array_copy(array_t other);
 array_t array_create(unsigned object_size, allocator_info alloc); 
 void array_destroy(array_t ctx);
 void array_push(array_t ctx, void* object);

@@ -5,6 +5,9 @@
 extern "C" {
 #endif
 
+typedef unsigned uint32t;
+typedef unsigned long long uint64t;
+
 void* user_alloc(unsigned size);
 void user_dealloc(void* bfr);
 void* kernel_alloc(unsigned size);

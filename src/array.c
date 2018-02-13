@@ -10,6 +10,15 @@ struct array_impl
     int size;
 };
 
+array_t array_copy(array_t other)
+{
+    array_t ret = allocate(other->alloc, sizeof(struct array_impl));
+    *ret = *other;
+    ret->object = allocate(other->alloc, other->available * other->obj_size);
+    copy(ret->object, other->object, other->size * other->obj_size);
+    return ret;
+}
+
 array_t array_create(unsigned object_size, allocator_info alloc)
 {
     array_t ret = allocate(alloc, sizeof(struct array_impl));

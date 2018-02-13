@@ -4,6 +4,12 @@
 #include <linux/kernel.h>
 #include <linux/uaccess.h>
 #include <linux/string.h>
+#include <linux/types.h>
+
+int static_assert_on_u32[sizeof(u32) == sizeof(uint32_t)];
+int static_assert_on_sizeof_uint32_t[4 == sizeof(uint32_t)];
+int static_assert_on_u64[sizeof(u64) == sizeof(uint64_t)];
+int static_assert_on_sizeof_uint64_t[4 == sizeof(uint64_t)];
 
 void* user_alloc(unsigned size)
 {
