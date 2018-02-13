@@ -76,7 +76,8 @@ void array_swap_elems(array_t ctx, unsigned first, unsigned second)
         return;
     char* first_elem = ctx->object + first * ctx->obj_size;
     char* second_elem = ctx->object + second * ctx->obj_size;
-    for (int i = 0; i < ctx->obj_size; ++i)
+    int i;
+    for (i = 0; i < ctx->obj_size; ++i)
     {
         *(first_elem + i) ^= *(second_elem + i);
         *(second_elem + i) ^= *(first_elem + i);

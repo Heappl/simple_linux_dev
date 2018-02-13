@@ -1,44 +1,19 @@
+#include "linux/string.h"
+#include "linux/kernel.h"
 #include "median_dev.h"
+#include "median_container.h"
 #include "linux_wrapper.h"
 
 typedef struct {} word_stream;
 struct median_dev_impl
 {
-    /*buffer input, output;*/
-    /*word_stream stream;*/
-    /*ordered_map sofar;*/
-    /*ordered_map_it median_it;*/
-    int x;
+    median_container_t mc;
+    char* input_buffer;
+    char* output_buffer;
+    unsigned input_size;
+    unsigned output_size;
+    int just_read;
 };
-
-void swap(char* x, char* y)
-{
-    *x ^= *y;
-    *y ^= *x;
-    *x ^= *y;
-}
-
-void reverse(char* begin, char* end)
-{
-    while (begin != end)
-    {
-        --end;
-        if (begin == end) break;
-        swap(begin, end);
-    }
-}
-
-/*string_view int_to_stream(stream_buffer stream, long x)*/
-/*{*/
-    /*long i = 0;*/
-    /*while (x > 0)*/
-    /*{*/
-        /*long dig = x % 10;*/
-        /*buff[i++] = (char)dig;*/
-        /*x /= 10;*/
-    /*}*/
-    /*reverse(buff, buff + i);*/
-/*}*/
 
 int iswhitespace(char x)
 {
@@ -59,64 +34,97 @@ int iswhitespace(char x)
 string_view pop_next_word(char** begin, char* end)
 {
     string_view ret = {*begin, 0};
+    return ret;
     while (1)
     {
         if (*begin == end) break;
-        if (iswhitespace(*(*begin)++))
-            break;
+        if (iswhitespace(**begin))
+        {
+            **begin = '\0';
+            (*begin)++;
+            return ret;
+        }
         ret.len++;
     }
     return ret;
 }
 
-int long_cmp(void* first, void* second)
+int long_less(void* first, void* second)
 {
     return *(long*)first < *(long*)second;
+}
+int long_greater(void* first, void* second)
+{
+    return *(long*)first > *(long*)second;
 }
 
 median_dev median_dev_init(void)
 {
     median_dev ret = kernel_alloc(sizeof(median_dev));
-    /*ret->input = char_buffer_alloc(25);*/
-    /*ret->output = stream_buffer_alloc(10 * 1024);*/
-    /*ret->sofar = ordered_map_alloc(dev->sofar, sizeof(long), long_cmp);*/
-    /*ret->stream = stream_buffer_init(buff, size);*/
+    ret->mc = median_container_create(sizeof(long), long_less, long_greater, make_kernel_alloc());
+    ret->input_size = 10 * 1024;
+    ret->input_buffer = kernel_alloc(ret->input_size);
+    ret->output_size = sizeof(long) * 4;
+    ret->output_buffer = kernel_alloc(ret->output_size);
+    ret->just_read = 0;
     return ret;
 }
 void median_dev_release(median_dev dev)
 {
-    /*stream_buffer_dealloc(dev->input);*/
-    /*stream_buffer_dealloc(dev->output);*/
-    /*ordered_map_dealloc(dev->sofar);*/
+    median_container_destroy(dev->mc);
+    kernel_dealloc(dev->input_buffer);
+    kernel_dealloc(dev->output_buffer);
     kernel_dealloc(dev);
 }
 
 string_view median_dev_get(median_dev dev)
 {
-    /*long median = ordered_map_(dev->sofar);*/
-    /*return int_to_stream(dev->output, median);*/
+    string_view ret = {};
+    if (dev->just_read)
+    {
+        dev->just_read = 0;
+        return ret;
+    }
+    long* lower = median_container_get_lower(dev->mc);
+    long* upper = median_container_get_upper(dev->mc);
+    if (!lower)
+        return ret;
+    long median = (*lower + *upper) / 2;
+    char* out = dev->output_buffer;
+    if ((*upper - *lower) % 2 == 0)
+        sprintf(out, "%li\n", median);
+    else
+        sprintf(out, "%li.5\n", median);
+    ret.ptr = out;
+    ret.len = strlen(out);
+    dev->just_read = 1;
+    return ret;
 }
 char* median_dev_prepare_buff(median_dev dev, unsigned size)
 {
-    /*return stream_buffer_pack(dev->stream, size);*/
+    size++;
+    if (dev->input_size < size)
+    {
+        kernel_dealloc(dev->input_buffer);
+        dev->input_buffer = kernel_alloc(size);
+        dev->input_size = size;
+    }
+    return dev->input_buffer;
 }
 
-/*void update_median(ordered_map sofar, ordered_map_it& it, long x)*/
-/*{*/
-    /*if (x <= *(long*)order_map_get(it))*/
-    /*{*/
-    /*}*/
-/*}*/
 void median_dev_append(median_dev dev, char* buff, unsigned size)
 {
-    /*char* end = buff + size;*/
-    /*while (true)*/
-    /*{*/
-        /*string_view next_word = pop_next_word(buff, end);*/
-        /*long x;*/
-        /*kstrtol(next_word.ptr, 10, &x);*/
-
-        /*update_median(dev->sofar, dev->median_it, dev->median, x);*/
-    /*}*/
+    char* end = buff + size;
+    *end = '\0';
+    while (buff != end)
+    {
+        string_view next_word = pop_next_word(&buff, end);
+        printk(KERN_INFO "next word %s\n", next_word.ptr);
+        long x;
+        kstrtol(next_word.ptr, 10, &x);
+        printk(KERN_INFO "inserted %li %s\n", x, buff);
+        median_container_insert(dev->mc, &x);
+        break;
+    }
 }
 

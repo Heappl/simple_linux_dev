@@ -67,7 +67,6 @@ TEST_F(ArrayTest, singlePushAndPop) {
 }
 
 TEST_F(ArrayTest, manyPushesFollowedByPopsTillEmpty_SizeCheck) {
-    auto array = array_create(sizeof(int), alloc);
     for (int i = 0; i < 100; ++i) {
         array_push(array, &i);
         ASSERT_EQ(i + 1, array_size(array));

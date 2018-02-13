@@ -5,11 +5,6 @@ BUILD_DIR_MAKEFILE ?= $(BUILD_DIR)/Makefile
 FLAGS=-I/lib/modules/$(shell uname -r)/build/include
 FLAGS=-std=C11
  
-modname=median
-obj-m := ${modname}.o
-${modname}-objs := init.o median_dev.o linux_wrapper.o
-
-
 all: $(BUILD_DIR_MAKEFILE) $(OBJECTS)
 	$(MAKE) -C $(KERNELDIR)  M=$(BUILD_DIR) src=$(SOURCEDIR) modules
 
