@@ -238,26 +238,30 @@ void bigint_impl_sub_u(bigint arg, unsigned x, int start)
         {
             aux -= carry;
             *curr = aux;
+            carry = 0;
             break;
         }
         else
         {
-            carry -= aux;
-            *curr = carry;
+            aux -= carry;
+            *curr = aux;
             carry = 1;
         }
     }
+
     if (carry > 0)
     {
         arg->negative = !arg->negative;
+        carry = 0;
         for (i = 0; i < array_size(arg->array); ++i)
         {
             uint32t* curr = (uint32t*)array_get(arg->array, i);
-            *curr = -*curr;
+            *curr = -*curr - carry;
+            carry = *curr != 0;
         }
-        --carry;
-        array_push(arg->array, &carry);
     }
+    if (bigint_iszero(arg))
+        arg->negative = 0;
 }
 void bigint_add_u(bigint arg, unsigned x)
 {
@@ -296,5 +300,10 @@ bigint bigint_fromstr(const char* buffer, int size, allocator_info alloc)
 int bigint_est_size(bigint x)
 {
     return array_size(x->array) * 10;
+}
+
+void bigint_negate(bigint arg)
+{
+    arg->negative = !arg->negative;
 }
 

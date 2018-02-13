@@ -18,6 +18,7 @@ unsigned bigint_div_u(bigint arg, unsigned x);
 void bigint_mult_i(bigint arg, int x);
 void bigint_add_u(bigint arg, unsigned x);
 void bigint_add(bigint arg, bigint other);
+void bigint_negate(bigint arg);
 
 int bigint_tostr(bigint x, char* buffer, int size);
 bigint bigint_fromstr(const char* buffer, int size, allocator_info alloc);

@@ -107,11 +107,8 @@ string_view median_dev_get(median_dev dev)
         dev->output_buffer = kernel_alloc(dev->output_size);
     }
     ret.len = bigint_tostr(median, dev->output_buffer, dev->output_size);
-    if (rem != 0)
-    {
-        dev->output_buffer[ret.len++] = '.';
-        dev->output_buffer[ret.len++] = '5';
-    }
+    dev->output_buffer[ret.len++] = '.';
+    dev->output_buffer[ret.len++] = (rem != 0) ? '5' : '0';
     dev->just_read = 1;
     bigint_destroy(median);
     return ret;

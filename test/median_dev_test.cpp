@@ -36,22 +36,25 @@ struct MedianDevTest : ::testing::Test
 TEST_F(MedianDevTest, simpleMedian)
 {
     append_stream("1 2 3");
-    check_median("2");
+    check_median("2.0");
 }
 
 TEST_F(MedianDevTest, simpleMedianSplit)
 {
-    append_stream("1");
-    check_median("1");
+    append_stream("1 2");
+    check_median("1.5");
 
-    append_stream("2 3");
-    check_median("2");
+    append_stream("3");
+    check_median("2.0");
+
+    append_stream("2");
+    check_median("2.0");
 }
 
 TEST_F(MedianDevTest, someSimpleNegatives)
 {
     append_stream("-1 -2 -3");
-    check_median("-2");
+    check_median("-2.0");
 }
 
 } //namespace

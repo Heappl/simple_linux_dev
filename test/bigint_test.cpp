@@ -252,21 +252,21 @@ TEST_F(BigintTest, addSmallBigInts)
 
 TEST_F(BigintTest, subSmallBigInts)
 {
-    //for (int i = -256; i < 256; ++i)
-    //{ 
-        //bigint x = bigint_create(i, alloc);
-        //int64_t aux = i;
-        //for (int j = -256; j < 256; ++j)
-        //{
-            //bigint y = bigint_create(-j, alloc);
-            //bigint_add(x, y);
-            //aux -= j;
-            //ASSERT_NO_FATAL_FAILURE(checkToString(x, std::to_string(aux)))
-                //<< (aux + j) << " " << j << " " << aux;
-            //bigint_destroy(y);
-        //}
-        //bigint_destroy(x);
-    //}
+    for (int i = -256; i < 256; ++i)
+    { 
+        bigint x = bigint_create(i, alloc);
+        int64_t aux = i;
+        for (int j = -256; j < 256; ++j)
+        {
+            bigint y = bigint_create(j, alloc);
+            bigint_add(x, y);
+            aux += j;
+            ASSERT_NO_FATAL_FAILURE(checkToString(x, std::to_string(aux)))
+                << (aux - j) << " " << j << " " << aux;
+            bigint_destroy(y);
+        }
+        bigint_destroy(x);
+    }
 }
 
 TEST_F(BigintTest, add64BitBigInts)
@@ -286,6 +286,28 @@ TEST_F(BigintTest, add64BitBigInts)
     bigint_destroy(x);
 }
 
+TEST_F(BigintTest, sub64BitBigInts)
+{
+    int64_t aux = 132131231;
+    bigint x = bigint_create(aux, alloc);
+    int mult = 999213999;
+    for (int i = -55323; i < 63123; i += 12)
+    {
+        int64_t added = i * int64_t(mult); 
+        aux += added;
+        bigint y = bigint_create(i, alloc);
+        bigint_mult_i(y, mult);
+        ASSERT_NO_FATAL_FAILURE(checkToString(y, std::to_string(added)));
+        bigint_add(x, y);
+        ASSERT_NO_FATAL_FAILURE(checkToString(x, std::to_string(aux)))
+            << (aux - i * int64_t(mult)) << " " << (i * int64_t(mult))
+                << " " << aux
+                << " " << i;
+        bigint_destroy(y);
+    }
+    bigint_destroy(x);
+}
+
 TEST_F(BigintTest, addPowerTwos)
 {
     std::string first = "2475880078570760549798248448";
@@ -299,7 +321,24 @@ TEST_F(BigintTest, addPowerTwos)
     bigint_add(y, x);
     ASSERT_NO_FATAL_FAILURE(checkToString(y, "2476484541480567864385601536"));
 }
-TEST_F(BigintTest, indepentedBigInts)
+
+TEST_F(BigintTest, subPowerTwos)
+{
+    std::string first = "2475880078570760549798248448";
+    std::string second = "302231454903657293676544";
+    bigint x = bigint_fromstr(first.c_str(), first.size(), alloc);
+    bigint y = bigint_fromstr(second.c_str(), second.size(), alloc);
+    ASSERT_NO_FATAL_FAILURE(checkToString(x, first));
+    ASSERT_NO_FATAL_FAILURE(checkToString(y, second));
+    bigint_negate(y);
+    bigint_add(x, y);
+    ASSERT_NO_FATAL_FAILURE(checkToString(x, "2475577847115856892504571904"));
+    bigint_negate(x);
+    bigint_add(y, x);
+    ASSERT_NO_FATAL_FAILURE(checkToString(y, "-" + first));
+}
+
+TEST_F(BigintTest, addIndepentedBigInts)
 {
     std::string first =  "1234567890123456789012345678901234567890";
     std::string second = "8765432109876543210987654321098765432109";
@@ -309,16 +348,41 @@ TEST_F(BigintTest, indepentedBigInts)
     checkToString(x, "9999999999999999999999999999999999999999");
 }
 
-TEST_F(BigintTest, addToBigInts)
+TEST_F(BigintTest, subIndepentedBigInts)
+{
+    std::string first =  "123456780123456780123456789012345678901";
+    std::string second = "234567891234567890123456789012345678901";
+    bigint x = bigint_fromstr(first.c_str(), first.size(), alloc);
+    bigint y = bigint_fromstr(second.c_str(), second.size(), alloc);
+    bigint_negate(x);
+    bigint_add(y, x);
+    checkToString(y, "111111111111111110000000000000000000000");
+}
+
+TEST_F(BigintTest, addTwoBigInts)
 {
     std::string first = "123405054321123405054321123405054321123405054321";
     std::string second = "99999999999999999999999999999999";
     bigint x = bigint_fromstr(first.c_str(), first.size(), alloc);
     bigint y = bigint_fromstr(second.c_str(), second.size(), alloc);
-    checkToString(x, first);
-    checkToString(y, second);
     bigint_add(y, x);
     checkToString(y, "123405054321123505054321123405054321123405054320");
+    bigint_destroy(y);
+    bigint_destroy(x);
+}
+
+TEST_F(BigintTest, subTwoBigInts)
+{
+    std::string first = "123405054321123405054321123405054321123405054321";
+    std::string second = "99999999999999999999999999999999";
+    bigint x = bigint_fromstr(first.c_str(), first.size(), alloc);
+    bigint y = bigint_fromstr(second.c_str(), second.size(), alloc);
+    bigint_negate(x);
+    bigint_add(y, x);
+    checkToString(y, "-123405054321123305054321123405054321123405054322");
+    bigint_negate(x);
+    bigint_add(y, x);
+    checkToString(y, second);
     bigint_destroy(y);
     bigint_destroy(x);
 }
