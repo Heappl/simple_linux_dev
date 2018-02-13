@@ -19,10 +19,11 @@ void bigint_mult_i(bigint arg, int x);
 void bigint_add_u(bigint arg, unsigned x);
 void bigint_add(bigint arg, bigint other);
 
-void bigint_tostr(bigint x, char* buffer, int size);
+int bigint_tostr(bigint x, char* buffer, int size);
 bigint bigint_fromstr(const char* buffer, int size, allocator_info alloc);
 int bigint_toint(bigint x);
 bigint bigint_copy(bigint x);
+int bigint_est_size(bigint x);
 
 #ifdef __cplusplus
 }

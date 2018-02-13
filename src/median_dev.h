@@ -1,6 +1,9 @@
 #ifndef MEDIAN_DEV_H
 #define MEDIAN_DEV_H
 
+#ifdef __cplusplus
+extern "C" {
+#endif
 struct median_dev_impl;
 typedef struct median_dev_impl* median_dev;
 
@@ -16,6 +19,10 @@ void median_dev_release(median_dev dev);
 string_view median_dev_get(median_dev dev);
 char* median_dev_prepare_buff(median_dev dev, unsigned size);
 void median_dev_append(median_dev, char*, unsigned size);
+
+#ifdef __cplusplus
+}
+#endif
 
 #endif //MEDIAN_DEV_H
 

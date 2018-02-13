@@ -3,6 +3,7 @@
 #include "median_dev.h"
 #include "median_container.h"
 #include "linux_wrapper.h"
+#include "bigint.h"
 
 typedef struct {} word_stream;
 struct median_dev_impl
@@ -34,37 +35,39 @@ int iswhitespace(char x)
 string_view pop_next_word(char** begin, char* end)
 {
     string_view ret = {*begin, 0};
-    return ret;
     while (1)
     {
-        if (*begin == end) break;
+        if (*begin == end) return ret;
         if (iswhitespace(**begin))
         {
             **begin = '\0';
             (*begin)++;
             return ret;
         }
+        (*begin)++;
         ret.len++;
     }
     return ret;
 }
 
-int long_less(void* first, void* second)
+int bigint_less_wrapper(void* first, void* second)
 {
-    return *(long*)first < *(long*)second;
+    return bigint_less(*(bigint*)first, *(bigint*)second);
 }
-int long_greater(void* first, void* second)
+
+int bigint_greater_wrapper(void* first, void* second)
 {
-    return *(long*)first > *(long*)second;
+    return bigint_greater(*(bigint*)first, *(bigint*)second);
 }
 
 median_dev median_dev_init(void)
 {
     median_dev ret = kernel_alloc(sizeof(median_dev));
-    ret->mc = median_container_create(sizeof(long), long_less, long_greater, make_kernel_alloc());
+    ret->mc = median_container_create(
+        sizeof(bigint), bigint_less_wrapper, bigint_greater_wrapper, make_kernel_alloc());
     ret->input_size = 10 * 1024;
     ret->input_buffer = kernel_alloc(ret->input_size);
-    ret->output_size = sizeof(long) * 4;
+    ret->output_size = 1024;
     ret->output_buffer = kernel_alloc(ret->output_size);
     ret->just_read = 0;
     return ret;
@@ -79,29 +82,37 @@ void median_dev_release(median_dev dev)
 
 string_view median_dev_get(median_dev dev)
 {
-    long* lower = 0;
-    long* upper = 0;
-    long median = 0;
-    char* out = 0;
-    string_view ret = {};
+    bigint lower, upper;
+    int rem = 0;
+    string_view ret = {dev->output_buffer, 0};
     if (dev->just_read)
     {
         dev->just_read = 0;
         return ret;
     }
-    lower = median_container_get_lower(dev->mc);
-    upper = median_container_get_upper(dev->mc);
+    lower = *(bigint*)median_container_get_lower(dev->mc);
+    upper = *(bigint*)median_container_get_upper(dev->mc);
     if (!lower)
         return ret;
-    median = (*lower + *upper) / 2;
-    out = dev->output_buffer;
-    if ((*upper - *lower) % 2 == 0)
-        sprintf(out, "%li\n", median);
-    else
-        sprintf(out, "%li.5\n", median);
-    ret.ptr = out;
-    ret.len = strlen(out);
+
+    bigint median = bigint_copy(lower);
+    bigint_add(median, upper);
+    rem = bigint_div_u(median, 2);
+    
+    if (bigint_est_size(median) > dev->output_size)
+    {
+        kernel_dealloc(dev->output_buffer);
+        dev->output_size = bigint_est_size(median);
+        dev->output_buffer = kernel_alloc(dev->output_size);
+    }
+    ret.len = bigint_tostr(median, dev->output_buffer, dev->output_size);
+    if (rem != 0)
+    {
+        dev->output_buffer[ret.len++] = '.';
+        dev->output_buffer[ret.len++] = '5';
+    }
     dev->just_read = 1;
+    bigint_destroy(median);
     return ret;
 }
 char* median_dev_prepare_buff(median_dev dev, unsigned size)
@@ -122,13 +133,9 @@ void median_dev_append(median_dev dev, char* buff, unsigned size)
     *end = '\0';
     while (buff != end)
     {
-        long x;
         string_view next_word = pop_next_word(&buff, end);
-        printk(KERN_INFO "next word %s\n", next_word.ptr);
-        kstrtol(next_word.ptr, 10, &x);
-        printk(KERN_INFO "inserted %li %s\n", x, buff);
+        bigint x = bigint_fromstr(next_word.ptr, next_word.len, make_kernel_alloc());
         median_container_insert(dev->mc, &x);
-        break;
     }
 }
 

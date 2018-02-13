@@ -21,11 +21,13 @@ add_executable(
     src/heap.c
     src/median_container.c
     src/bigint.c
+    src/median_dev.c
     test/linux_wrapper.cpp
     test/array_test.cpp
     test/heap_test.cpp
     test/allocator_test.cpp
     test/median_container_test.cpp
     test/bigint_test.cpp
+    test/median_dev_test.cpp
 )
 target_link_libraries(${PROJECT_NAME} gtest gtest_main)

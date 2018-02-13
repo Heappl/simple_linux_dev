@@ -42,46 +42,58 @@ void bigint_destroy(bigint x)
     deallocate(x->alloc, x);
 }
 
+int bigint_impl_equal(bigint first, bigint second)
+{
+    int s1 = array_size(first->array);
+    int s2 = array_size(second->array);
+    int s = (s1 < s2) ? s2 : s1;
+    int bothzero = 1;
+
+    for (int i = s - 1; i >= 0; --i)
+    {
+        uint32t first_curr = 0;
+        if (i < s1)
+            first_curr = *(uint32t*)array_get(first->array, i);
+        uint32t second_curr = 0;
+        if (i < s2)
+            second_curr = *(uint32t*)array_get(second->array, i);
+        bothzero &= first_curr || second_curr;
+        if (first_curr != second_curr) return 0;
+    }
+    return bothzero || (first->negative == second->negative);
+}
+
 int bigint_less(bigint first, bigint second)
 {
-    int s = 0;
-    int i;
-    if (first->negative && !second->negative)
-        return 1;
-    if (!first->negative && second->negative)
+    int i = 0;
+    int s1 = array_size(first->array);
+    int s2 = array_size(second->array);
+    int s = (s1 < s2) ? s2 : s1;
+    if (bigint_impl_equal(first, second))
         return 0;
-    if (array_size(first->array) < array_size(second->array))
-        return 1;
-    if (array_size(first->array) > array_size(second->array))
-        return 0;
-    s = array_size(first->array);
+    if (first->negative != second->negative)
+        return !first->negative;
+
     for (i = s - 1; i >= 0; --i)
     {
-        uint32t first_curr = *(uint32t*)array_get(first->array, i);
-        uint32t second_curr = *(uint32t*)array_get(second->array, i);
+        uint32t first_curr = 0;
+        if (i < s1)
+            first_curr = *(uint32t*)array_get(first->array, i);
+        uint32t second_curr = 0;
+        if (i < s2)
+            second_curr = *(uint32t*)array_get(second->array, i);
         if (first_curr == second_curr) continue;
-        return first_curr < second_curr;
+        if (first->negative)
+            return first_curr > second_curr;
+        else    
+            return first_curr < second_curr;
     }
     return 0;
 }
 
 int bigint_greater(bigint first, bigint second)
 {
-    int s = 0;
-    int i;
-    if (array_size(first->array) > array_size(second->array))
-        return 1;
-    if (array_size(first->array) < array_size(second->array))
-        return 0;
-    s = array_size(first->array);
-    for (i = s - 1; i >= 0; --i)
-    {
-        uint32t first_curr = *(uint32t*)array_get(first->array, i);
-        uint32t second_curr = *(uint32t*)array_get(second->array, i);
-        if (first_curr == second_curr) continue;
-        return first_curr > second_curr;
-    }
-    return 0;
+    return !bigint_less(first, second) && !bigint_impl_equal(first, second);
 }
 
 void bigint_mult_i(bigint arg, int x)
@@ -154,7 +166,7 @@ unsigned bigint_div_u(bigint x, unsigned by)
     return reminder;;
 }
 
-void bigint_positive_tostr(bigint x, char* buffer, int size)
+int bigint_positive_tostr(bigint x, char* buffer, int size)
 {
     int i = 0;
     bigint xcopy = bigint_copy(x);
@@ -165,6 +177,7 @@ void bigint_positive_tostr(bigint x, char* buffer, int size)
     }
     bigint_impl_reverse(buffer, buffer + i);
     buffer[i] = '\0';
+    return i;
 }
 
 int bigint_toint(bigint x)
@@ -174,7 +187,7 @@ int bigint_toint(bigint x)
     return (int)aux;
 }
 
-void bigint_tostr(bigint x, char* buffer, int size)
+int bigint_tostr(bigint x, char* buffer, int size)
 {
     int i = 0;
     if (x->negative && (i + 1 < size))
@@ -183,9 +196,10 @@ void bigint_tostr(bigint x, char* buffer, int size)
     {
         buffer[i++] = '0';
         buffer[i] = '\0';
+        return i;
     }
     else
-        bigint_positive_tostr(x, buffer + i, size - i);
+        return bigint_positive_tostr(x, buffer + i, size - i);
 }
 
 
@@ -268,5 +282,10 @@ bigint bigint_fromstr(const char* buffer, int size, allocator_info alloc)
         bigint_add_u(ret, (int)(buffer[i] - '0'));
     }
     return ret;
+}
+
+int bigint_est_size(bigint x)
+{
+    return array_size(x->array) * 10;
 }
 
